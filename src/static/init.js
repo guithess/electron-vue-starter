@@ -1,4 +1,5 @@
 const { app, BrowserWindow, Menu } = require("electron");
+const { autoUpdater } = require("electron-updater");
 const path = require("path");
 const url = require("url");
 const pkjson = require("./package.json");
@@ -17,7 +18,7 @@ function createWindow() {
         win.loadURL("http://localhost:3000/");
 
         // Enable Vue DevTools
-        BrowserWindow.addDevToolsExtension("node_modules/vue-devtools");
+        require("vue-devtools").install();
 
         // Open the DevTools.
         win.webContents.openDevTools();
@@ -27,6 +28,9 @@ function createWindow() {
             protocol: "file:",
             slashes: true
         }));
+
+        // Begin checking for updates
+        autoUpdater.checkForUpdates();
     }
 
     win.on("ready-to-show", () => {
@@ -66,3 +70,23 @@ app.on("activate", () => {
 
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.
+
+
+// -----------------------------------------------------------------------
+// Auto Update
+
+function sendStatusToWindow(text) { console.log(text); }
+autoUpdater.on('checking-for-update', () => { sendStatusToWindow('Checking for update...'); });
+autoUpdater.on('update-available', (ev, info) => { sendStatusToWindow('Update available.'); });
+autoUpdater.on('update-not-available', (ev, info) => { sendStatusToWindow('Update not available.'); });
+autoUpdater.on('error', (ev, err) => { sendStatusToWindow('Error in auto-updater.'); });
+autoUpdater.on('download-progress', (ev, progressObj) => { sendStatusToWindow('Download progress...'); });
+autoUpdater.on('update-downloaded', (ev, info) => { sendStatusToWindow('Update downloaded; will install in 5 seconds'); });
+autoUpdater.on('update-downloaded', (ev, info) => {
+    // Wait 5 seconds, then quit and install
+    // In your application, you don't need to wait 5 seconds.
+    // You could call autoUpdater.quitAndInstall(); immediately
+    setTimeout(function () {
+        autoUpdater.quitAndInstall();
+    }, 5000);
+});

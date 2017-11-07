@@ -53,18 +53,18 @@ gulp.task("pkjson", () => {
 gulp.task("watch:static", ["static"], () => {
     watch("./src/static/**/*", (file) => {
         switch (file.event) {
-            case "add":
-                gutil.log(`File ${path.relative(__dirname, file.path)} was created! Copying to build folder...`);
-                gulp.src(file.path).pipe(gulp.dest(`./app/${path.relative("./src/static", path.dirname(file.path))}`));
-                break;
-            case "unlink":
-                gutil.log(`File ${path.relative(__dirname, file.path)} was removed! Removing from build folder...`);
-                del.sync(`./app/${path.relative("./src/static", file.path)}`);
-                break;
-            case "change":
-                gutil.log(`File ${path.relative(__dirname, file.path)} has changed! Updating on build folder...`);
-                gulp.src(file.path).pipe(gulp.dest(`./app/${path.relative("./src/static", path.dirname(file.path))}`));
-                break;
+        case "add":
+            gutil.log(`File ${path.relative(__dirname, file.path)} was created! Copying to build folder...`);
+            gulp.src(file.path).pipe(gulp.dest(`./app/${path.relative("./src/static", path.dirname(file.path))}`));
+            break;
+        case "unlink":
+            gutil.log(`File ${path.relative(__dirname, file.path)} was removed! Removing from build folder...`);
+            del.sync(`./app/${path.relative("./src/static", file.path)}`);
+            break;
+        case "change":
+            gutil.log(`File ${path.relative(__dirname, file.path)} has changed! Updating on build folder...`);
+            gulp.src(file.path).pipe(gulp.dest(`./app/${path.relative("./src/static", path.dirname(file.path))}`));
+            break;
         }
         browsersync.reload();
     });
@@ -92,22 +92,20 @@ gulp.task("build", () => {
 
 gulp.task("serve", () => {
     return runsequence("clean", "pkjson", "watch", () => {
-        browsersync.init({
+        return browsersync.init({
             ui: false,
             open: false,
             notify: false,
             server: { baseDir: "./app" },
+        }, () => {
+            const spawn = require("child_process").spawn;
+            const proc = spawn(electron, ["app"]);
+            proc.stdout.on("data", (data) => { console.log(data.toString()); });
+            proc.stderr.on("data", (data) => { console.log(data.toString()); });
+            proc.on("exit", (code) => {
+                console.log(`Child exited with code ${code}`);
+                process.exit(0);
+            });
         });
-
-        const spawn = require("child_process").spawn;
-        const proc = spawn(electron, ["app"]);
-        proc.stdout.on("data", (data) => { console.log(data.toString()); });
-        proc.stderr.on("data", (data) => { console.log(data.toString()); });
-        proc.on("exit", (code) => {
-            console.log(`Child exited with code ${code}`);
-            process.exit(0);
-        });
-
-        return;
     });
 });
